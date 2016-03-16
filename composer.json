@@ -1,0 +1,17 @@
+{
+    "name": "bozboz/jam-blog",
+    "authors": [
+        {
+            "name": "Jim Hollington",
+            "email": "jim@bozboz.co.uk"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Bozboz\\JamBlog\\": "src/"
+        }
+    },
+    "require": {
+        "bozboz/jam": "dev-master"
+    }
+}
