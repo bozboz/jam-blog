@@ -15,25 +15,15 @@ use Illuminate\Support\Facades\Request;
 
 class JamBlogServiceProvider extends JamServiceProvider
 {
-    protected $blogs;
-
     public function register()
     {
     }
 
     public function boot()
     {
-        $permissions = $this->app['permission.handler'];
-        foreach ($this->app['config']->get('jam-blog.blogs') as $blogName => $blogConfig) {
-            foreach ($blogConfig['entities'] as $entityName => $menuName) {
-                $permissions->define([
-                    "create_{$blogName}_{$entityName}" => 'Bozboz\Permissions\Rules\ModelRule',
-                    "view_{$blogName}_{$entityName}" => 'Bozboz\Permissions\Rules\ModelRule',
-                    "edit_{$blogName}_{$entityName}" => 'Bozboz\Permissions\Rules\ModelRule',
-                    "delete_{$blogName}_{$entityName}" => 'Bozboz\Permissions\Rules\ModelRule',
-                ]);
-            }
-        }
+        $this->publishes([
+            __DIR__ . '/../../config/jam-blog.php' => config_path('jam-blog.php'),
+        ]);
 
         $this->registerFieldTypes();
 
@@ -49,7 +39,9 @@ class JamBlogServiceProvider extends JamServiceProvider
     protected function fetchConfiguredBlogs()
     {
         try {
-            $this->blogs = $this->app['FieldMapper']->get('blog')->fetchConfig();
+            $this->app['config']->set(['jam-blog' => array_merge_recursive($this->app['config']->get('jam-blog'), [
+                'blogs' => collect($this->app['FieldMapper']->get('blog')->fetchConfig())
+            ])]);
         } catch (QueryException $e) {
             // 99.9% of the time this will be because the package has only just
             // been installed and the db tables don't exist yet.
@@ -70,28 +62,31 @@ class JamBlogServiceProvider extends JamServiceProvider
     {
         $mapper = $this->app['EntityMapper'];
 
-        foreach ($this->blogs as $blogConfig) {
-            if (array_key_exists('posts_type', $blogConfig)) {
-                $mapper->register($blogConfig['posts_type'], new \Bozboz\Jam\Types\Type([
-                    'menu_title' => $blogConfig['name'],
-                    'name' => str_plural(ucwords(str_replace('-', ' ', $blogConfig['posts_type']))),
-                    'slug_root' => $blogConfig['slug_root'],
-                    'entity' => \Bozboz\JamBlog\Posts\Post::class,
-                    'report' => \Bozboz\Admin\Reports\Report::class,
-                    'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
-                    'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
-                ]));
-            }
-            if (array_key_exists('categories_type', $blogConfig)) {
+        foreach ($this->app['config']->get('jam-blog.blogs') as $blogConfig) {
+
+            $mapper->register($blogConfig['posts_type'], new \Bozboz\Jam\Types\Type([
+                'menu_title' => $blogConfig['name'],
+                'name' => $blogConfig['posts_name'],
+                'slug_root' => $blogConfig['slug_root'],
+                'entity' => \Bozboz\JamBlog\Posts\Post::class,
+                'report' => \Bozboz\Admin\Reports\Report::class,
+                'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
+                'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
+            ]));
+
+            if (array_key_exists('categories_enabled', $blogConfig)) {
+
                 $mapper->register($blogConfig['categories_type'], new \Bozboz\Jam\Types\Type([
                     'menu_title' => $blogConfig['name'],
-                    'name' => str_plural(ucwords(str_replace('-', ' ', $blogConfig['categories_type']))),
+                    'name' => $blogConfig['categories_name'],
                     'slug_root' => implode('/', [$blogConfig['slug_root'], 'categories']),
                     'entity' => \Bozboz\Jam\Entities\SortableEntity::class,
                     'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
                     'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
                 ]));
+
             }
+
         }
     }
 }
