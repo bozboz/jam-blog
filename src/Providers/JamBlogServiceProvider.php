@@ -9,7 +9,7 @@ use Bozboz\Jam\Fields\FieldMapper;
 use Bozboz\Jam\Providers\JamServiceProvider;
 use Bozboz\Jam\Types\Type;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Request;
 
 
@@ -23,8 +23,6 @@ class JamBlogServiceProvider extends JamServiceProvider
 
     public function boot()
     {
-        $packageRoot = __DIR__ . '/../../';
-
         $permissions = $this->app['permission.handler'];
         foreach ($this->app['config']->get('jam-blog.blogs') as $blogName => $blogConfig) {
             foreach ($blogConfig['entities'] as $entityName => $menuName) {
@@ -37,52 +35,26 @@ class JamBlogServiceProvider extends JamServiceProvider
             }
         }
 
-        $this->fetchConfiguredBlogs();
-
         $this->registerFieldTypes();
+
+        $this->fetchConfiguredBlogs();
 
         $this->registerEntityTypes();
 
         if (! $this->app->routesAreCached()) {
-            require "{$packageRoot}/src/Http/routes.php";
+            require __DIR__ . "/../Http/routes.php";
         }
     }
 
     protected function fetchConfiguredBlogs()
     {
-        $blogs = [];
         try {
-            if (starts_with($this->app['request']->path(), 'admin')) {
-                $results = DB::table('entity_values as ev')
-                    ->distinct()
-                    ->select(
-                        'e.name',
-                        DB::raw('coalesce(ep.path, e.slug) as slug_root'),
-                        'etfo.field_id',
-                        'etfo.key',
-                        'etfo.value'
-                    )
-                    ->join('entity_template_field_options as etfo', 'ev.field_id', '=', 'etfo.field_id')
-                    ->join('entities as e', 'ev.revision_id', '=', 'e.revision_id')
-                    ->leftJoin('entity_paths as ep', function($join) {
-                        $join->on('e.id', '=', 'ep.entity_id')
-                            ->whereNull('ep.deleted_at')
-                            ->whereNull('ep.canonical_id');
-                    })
-                    ->where('ev.type_alias', 'blog')->get();
-
-                foreach ($results as $row) {
-                    $blogs[$row->name]['name'] = $row->name;
-                    $blogs[$row->name]['slug_root'] = $row->slug_root;
-                    $blogs[$row->name][$row->key] = $row->value;
-                }
-            }
+            $this->blogs = $this->app['FieldMapper']->get('blog')->fetchConfig();
         } catch (QueryException $e) {
-            throw $e;
+            // 99.9% of the time this will be because the package has only just
+            // been installed and the db tables don't exist yet.
             // swallow and continue...
         }
-
-        $this->blogs = $blogs;
     }
 
     protected function registerFieldTypes()
@@ -100,17 +72,24 @@ class JamBlogServiceProvider extends JamServiceProvider
 
         foreach ($this->blogs as $blogConfig) {
             if (array_key_exists('posts_type', $blogConfig)) {
-                $mapper->register($blogConfig['posts_type'], new \Bozboz\JamBlog\Types\Post([
+                $mapper->register($blogConfig['posts_type'], new \Bozboz\Jam\Types\Type([
                     'menu_title' => $blogConfig['name'],
                     'name' => str_plural(ucwords(str_replace('-', ' ', $blogConfig['posts_type']))),
-                    'slug_root' => $blogConfig['slug_root']
+                    'slug_root' => $blogConfig['slug_root'],
+                    'entity' => \Bozboz\JamBlog\Posts\Post::class,
+                    'report' => \Bozboz\Admin\Reports\Report::class,
+                    'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
+                    'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
                 ]));
             }
             if (array_key_exists('categories_type', $blogConfig)) {
-                $mapper->register($blogConfig['categories_type'], new \Bozboz\JamBlog\Types\Category([
+                $mapper->register($blogConfig['categories_type'], new \Bozboz\Jam\Types\Type([
                     'menu_title' => $blogConfig['name'],
                     'name' => str_plural(ucwords(str_replace('-', ' ', $blogConfig['categories_type']))),
-                    'slug_root' => implode('/', [$blogConfig['slug_root'], 'categories'])
+                    'slug_root' => implode('/', [$blogConfig['slug_root'], 'categories']),
+                    'entity' => \Bozboz\Jam\Entities\SortableEntity::class,
+                    'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
+                    'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
                 ]));
             }
         }
