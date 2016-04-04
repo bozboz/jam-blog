@@ -4,7 +4,7 @@ namespace Bozboz\JamBlog\Http\Controllers\Admin;
 
 use Bozboz\Admin\Reports\Report;
 use Bozboz\JamBlog\Posts\PostDecorator;
-use Bozboz\Jam\Contracts\EntityRepository;
+use Bozboz\Jam\Repositories\Contracts\EntityRepository;
 use Bozboz\Jam\Http\Controllers\Admin\EntityController;
 
 class BlogPostController extends EntityController

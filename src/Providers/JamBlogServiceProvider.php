@@ -43,7 +43,7 @@ class JamBlogServiceProvider extends JamServiceProvider
                 'blogs' => collect($this->app['FieldMapper']->get('blog')->fetchConfig())
             ])]);
         } catch (QueryException $e) {
-            // 99.9% of the time this will be because the package has only just
+            // 99.99% of the time this will be because the package has only just
             // been installed and the db tables don't exist yet.
             // swallow and continue...
         }
@@ -70,18 +70,18 @@ class JamBlogServiceProvider extends JamServiceProvider
                 'slug_root' => $blogConfig['slug_root'],
                 'entity' => \Bozboz\JamBlog\Posts\Post::class,
                 'report' => \Bozboz\Admin\Reports\Report::class,
-                'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
+                'link_builder' => \Bozboz\JamBlog\Posts\LinkBuilder::class,
                 'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
             ]));
 
             if (array_key_exists('categories_enabled', $blogConfig)) {
 
-                $mapper->register($blogConfig['categories_type'], new \Bozboz\Jam\Types\Type([
+                $mapper->register($blogConfig['categories_type'], new \Bozboz\Jam\Types\NestedType([
                     'menu_title' => $blogConfig['name'],
                     'name' => $blogConfig['categories_name'],
                     'slug_root' => implode('/', [$blogConfig['slug_root'], 'categories']),
                     'entity' => \Bozboz\Jam\Entities\SortableEntity::class,
-                    'link_builder' => \Bozboz\Jam\Entities\LinkBuilder::class,
+                    'link_builder' => \Bozboz\JamBlog\Categories\LinkBuilder::class,
                     'menu_builder' => \Bozboz\Jam\Types\Menu\Standalone::class,
                 ]));
 

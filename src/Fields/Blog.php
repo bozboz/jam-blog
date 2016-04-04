@@ -84,7 +84,7 @@ class Blog extends Field
                 $config['posts_type'] = str_slug("{$config['name']}-{$config['posts_name']}");
 
                 if (!array_key_exists('categories_type', $config)) {
-                    $config['categories_name'] = config('jam-blog.defaults.categories_type');
+                    $config['categories_name'] = config('jam-blog.defaults.categories_name');
                 }
                 $config['categories_type'] = str_slug("{$config['name']}-{$config['categories_name']}");
 
@@ -145,9 +145,14 @@ class Blog extends Field
         ];
     }
 
+    public function getConfig()
+    {
+        return config('jam-blog.blogs')->where('field_id', $this->id)->first();
+    }
+
     public function getOption($key)
     {
-        $config = config('jam-blog.blogs')->where('field_id', $this->id)->first();
+        $config = $this->getConfig();
         return $config[$key] ?: config("jam-blog.defaults.{$key}");
     }
 
@@ -155,26 +160,11 @@ class Blog extends Field
     {
         $entity->setValue($value);
         $blog = $this->getValue($value);
-        $repository = app(\Bozboz\Jam\Contracts\EntityRepository::class);
-        $repository->loadCurrentListingValues($blog['posts']);
         $entity->setAttribute($value->key, $blog);
     }
 
     public function getValue(Value $value)
     {
-        $categoriesType = $this->getOption('categories_type');
-        return collect([
-            'posts' => Post::whereHas('template', function($query) {
-                    $query->whereTypeAlias($this->getOption('posts_type'));
-                })->with(['template', 'currentRevision', 'paths' => function($query) {
-                    $query->whereNull('canonical_id');
-                }])->ordered()->active()->simplePaginate(),
-            'categories' => ($categoriesType
-                    ? Category::whereHas('template', function($query) use ($categoriesType) {
-                        $query->whereTypeAlias($categoriesType);
-                    })->with('template')->ordered()->active()->get()
-                    : []
-                )
-        ]);
+        return $this->getConfig();
     }
 }
