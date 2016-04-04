@@ -39,7 +39,8 @@ class JamBlogServiceProvider extends JamServiceProvider
     protected function fetchConfiguredBlogs()
     {
         try {
-            $this->app['config']->set(['jam-blog' => array_merge_recursive($this->app['config']->get('jam-blog'), [
+            $config = $this->app['config']->get('jam-blog') ?: [];
+            $this->app['config']->set(['jam-blog' => array_merge_recursive($config, [
                 'blogs' => collect($this->app['FieldMapper']->get('blog')->fetchConfig())
             ])]);
         } catch (QueryException $e) {

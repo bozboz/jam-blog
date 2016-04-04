@@ -2,10 +2,10 @@
 
 namespace Bozboz\JamBlog\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Bozboz\JamBlog\Posts\Post;
 use Bozboz\JamBlog\Posts\PostRepository;
 use Carbon\Carbon;
+use Illuminate\Routing\Controller;
 
 class ArchiveController extends Controller
 {

@@ -67,7 +67,7 @@ class Blog extends Field
             ->where('entity_template_fields.type_alias', 'blog')
             ->groupBy('entity_template_fields.id')
             ->get())->map(function($blog) {
-                $config = array_merge([
+                $config = array_merge(config('jam-blog.defaults'), [
                         'field_id' => $blog->field_id,
                         'name' => $blog->name,
                         'slug_root' => $blog->slug_root
