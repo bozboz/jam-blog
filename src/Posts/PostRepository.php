@@ -31,14 +31,19 @@ class PostRepository extends EntityRepository
 
         $config = config('jam-blog.blogs')->where('posts_type', $postsType)->first();
 
-        $archive = [];
+        $archive = (object)[];
         foreach ($results as $row) {
-            $archive[$row->year]['year'] = $row->year;
-            $archive[$row->year]['url'] = $linkBuilder->archiveLink($postsType, $row->year);
+            if (!property_exists($archive, $row->year)) {
+                $archive->{$row->year} = (object)[
+                    'year' => $row->year,
+                    'url' => $linkBuilder->archiveLink($postsType, $row->year),
+                    'months' => (object)[]
+                ];
+            }
 
             $row->date = new Carbon("{$row->year}-{$row->month}-01");
             $row->url = $linkBuilder->archiveLink($postsType, $row->year, str_pad($row->month, 2, '0', STR_PAD_LEFT));
-            $archive[$row->year]['months'][$row->month] = $row;
+            $archive->{$row->year}->months->{$row->month} = $row;
         }
 
         return $archive;
