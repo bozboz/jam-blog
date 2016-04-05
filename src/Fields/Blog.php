@@ -156,6 +156,12 @@ class Blog extends Field
         return $config[$key] ?: config("jam-blog.defaults.{$key}");
     }
 
+    public function saveValue(Revision $revision, $value)
+    {
+        parent::saveValue($revision, $value);
+        static::clearConfigCache();
+    }
+
     public function injectValue(Entity $entity, Value $value)
     {
         $entity->setValue($value);
