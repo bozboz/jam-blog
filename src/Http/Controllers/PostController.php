@@ -16,10 +16,7 @@ class PostController extends Controller
 
         $blogConfig = config('jam-blog.blogs')->where('slug_root', $blogSlug)->first();
 
-        $posts = Post::ofType($blogConfig['posts_type'])
-            ->with(['template', 'currentRevision', 'paths' => function($query) {
-                $query->whereNull('canonical_id');
-            }])->ordered()->active()->simplePaginate();
+        $posts = $repository->getPosts($blogConfig['posts_type']);
 
         $repository->loadCurrentListingValues($posts);
 

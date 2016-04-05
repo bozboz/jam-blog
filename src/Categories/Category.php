@@ -2,12 +2,8 @@
 
 namespace Bozboz\JamBlog\Categories;
 
-use Bozboz\Jam\Entities\Entity;
+use Bozboz\Jam\Entities\SortableEntity;
 
-class Category extends Entity
+class Category extends SortableEntity
 {
-    public function scopeOrdered($query)
-    {
-    	$query->orderBy('name');
-    }
 }

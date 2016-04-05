@@ -13,10 +13,10 @@ class CategoryController extends Controller
 {
     public function listing(PostRepository $repository, Request $request, $blogSlug, $category = null)
     {
-        $categories = explode('/', $category);
-        $currentCategory = Category::whereSlug(end($categories))->first();
-
         $blogConfig = config('jam-blog.blogs')->where('slug_root', $blogSlug)->first();
+
+        $categories = explode('/', $category);
+        $currentCategory = Category::ofType($blogConfig['categories_type'])->whereSlug(end($categories))->first();
 
         if ($category) {
             $parentCategory = $repository->getForPath($request->path());

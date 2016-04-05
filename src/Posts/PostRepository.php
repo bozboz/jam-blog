@@ -51,11 +51,24 @@ class PostRepository extends EntityRepository
         } else {
             $query = Category::ofType($categoriesType);
         }
-        return $this->loadCurrentListingValues($query->active()->ordered()->get())->toTree();
+        return $this->loadCurrentListingValues($query->with('template')->withCanonicalPath()->active()->ordered()->get())->toTree();
+    }
+
+    public function getPosts($postsType)
+    {
+        return Post::ofType($postsType)
+            ->with(['template', 'currentRevision'])->withCanonicalPath()
+            ->ordered()->active()->simplePaginate();
     }
 
     public function postsForCategory($postsType, $categoryId)
     {
-        return $this->loadCurrentListingValues(Post::ofType($postsType)->whereBelongsToEntity('category', $categoryId)->with('template')->get());
+        return $this->loadCurrentListingValues(
+            Post::ofType($postsType)
+                ->withCanonicalPath()
+                ->with('template', 'currentRevision')
+                ->whereBelongsToEntity('category', $categoryId)
+                ->simplePaginate()
+        );
     }
 }
