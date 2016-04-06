@@ -56,7 +56,23 @@ class PostRepository extends EntityRepository
         } else {
             $query = Category::ofType($categoriesType);
         }
-        return $this->loadCurrentListingValues($query->with('template')->withCanonicalPath()->active()->ordered()->get())->toTree();
+        $categories = $this->loadCurrentListingValues(
+            $query->with('template')
+                ->withCanonicalPath()
+                ->active()->ordered()->get()
+        );
+
+        $categoryIds = $categories->pluck('id')->all();
+
+        $postCounts = Post::selectRaw('foreign_key as id, count(*) as count')
+            ->ofType('blog-posts')
+            ->whereBelongsToEntity('category', $categoryIds)
+            ->groupBy('foreign_key')->get();
+
+        return $categories->map(function($category) use ($postCounts) {
+            $category->post_count = $postCounts->where('id', $category->id)->first()->count;
+            return $category;
+        })->toTree();
     }
 
     public function getPosts($postsType)
@@ -68,11 +84,12 @@ class PostRepository extends EntityRepository
 
     public function postsForCategory($postsType, $categoryId)
     {
+        $descendants = Category::descendantsOf($categoryId)->pluck('id');
         return $this->loadCurrentListingValues(
             Post::ofType($postsType)
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
-                ->whereBelongsToEntity('category', $categoryId)
+                ->whereBelongsToEntity('category', $descendants->push($categoryId)->all())
                 ->simplePaginate()
         );
     }

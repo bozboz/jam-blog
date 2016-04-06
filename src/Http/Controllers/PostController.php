@@ -23,7 +23,8 @@ class PostController extends Controller
         return view($blogEntity->template->view)->with([
             'entity' => $blogEntity,
             'posts' => $posts,
-            'archive' => $repository->getArchive($blogConfig['posts_type'])
+            'archive' => [],
+            'categories' => []
         ]);
     }
 

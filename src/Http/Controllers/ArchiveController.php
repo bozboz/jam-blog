@@ -55,7 +55,8 @@ class ArchiveController extends Controller
         return view($blogEntity->template->view)->with([
             'entity' => $blogEntity,
             'posts' => $posts,
-            'archive' => $repository->getArchive($blogConfig['posts_type'])
+            'archive' => $repository->getArchive($blogConfig['posts_type']),
+            'categories' => $repository->getCategories($blogConfig['categories_type'])
         ]);
     }
 }

@@ -22,7 +22,7 @@ class CategoryController extends Controller
             $parentCategory = $repository->getForPath($request->path());
 
             $categories = $repository->getCategories($blogConfig['categories_type'], $parentCategory);
-            $posts = $repository->postsForCategory($blogConfig['posts_type'], $parentCategory);
+            $posts = $repository->postsForCategory($blogConfig['posts_type'], $parentCategory->id);
 
             $entity = $parentCategory;
         } else {
