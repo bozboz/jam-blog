@@ -87,6 +87,7 @@ class PostRepository extends EntityRepository
         $descendants = Category::descendantsOf($categoryId)->pluck('id');
         return $this->loadCurrentListingValues(
             Post::ofType($postsType)
+                ->select('entities.*')
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
                 ->whereBelongsToEntity('category', $descendants->push($categoryId)->all())
