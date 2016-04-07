@@ -25,6 +25,11 @@ class JamBlogServiceProvider extends JamServiceProvider
             __DIR__ . '/../../config/jam-blog.php' => config_path('jam-blog.php'),
         ]);
 
+        $this->app->bind(
+            \Bozboz\Jam\Entities\Contracts\LinkBuilder::class,
+            \Bozboz\JamBlog\Entities\LinkBuilder::class
+        );
+
         $this->registerFieldTypes();
 
         $this->fetchConfiguredBlogs();

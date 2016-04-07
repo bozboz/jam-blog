@@ -162,13 +162,6 @@ class Blog extends Field
         static::clearConfigCache();
     }
 
-    public function injectValue(Entity $entity, Value $value)
-    {
-        $entity->setValue($value);
-        $blog = $this->getValue($value);
-        $entity->setAttribute($value->key, $blog);
-    }
-
     public function getValue(Value $value)
     {
         return $this->getConfig();
