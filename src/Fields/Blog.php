@@ -98,7 +98,7 @@ class Blog extends Field
         return new FieldGroup($this->getInputLabel(), [
             new HiddenField($this->name),
             new LinkField($this->getInputName(), [
-                'route' => 'admin.entities.index',
+                'route' => 'admin.entities.show',
                 'blogName' => $instance->slug,
                 'entityTypeAlias' => $this->getOption('posts_type')
             ])
