@@ -24,6 +24,7 @@ class Blog extends Field
         parent::boot();
 
         static::saved([__CLASS__, 'clearConfigCache']);
+        static::deleted([__CLASS__, 'clearConfigCache']);
     }
 
     public static function clearConfigCache()
@@ -83,7 +84,7 @@ class Blog extends Field
                 }
                 $config['posts_type'] = str_slug("{$config['name']}-{$config['posts_name']}");
 
-                if (!array_key_exists('categories_type', $config)) {
+                if (!array_key_exists('categories_name', $config)) {
                     $config['categories_name'] = config('jam-blog.defaults.categories_name');
                 }
                 $config['categories_type'] = str_slug("{$config['name']}-{$config['categories_name']}");

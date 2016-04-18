@@ -66,7 +66,7 @@ class PostRepository extends EntityRepository
 
         $postCounts = Post::selectRaw('foreign_key as id, count(*) as count')
             ->ofType('blog-posts')
-            ->whereBelongsToEntity('category', $categoryIds)
+            ->whereBelongsTo('category', $categoryIds)
             ->groupBy('foreign_key')->get();
 
         return $categories->map(function($category) use ($postCounts) {
@@ -90,7 +90,7 @@ class PostRepository extends EntityRepository
                 ->select('entities.*')
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
-                ->whereBelongsToEntity('category', $descendants->push($categoryId)->all())
+                ->whereBelongsTo('category', $descendants->push($categoryId)->all())
                 ->simplePaginate()
         );
     }
