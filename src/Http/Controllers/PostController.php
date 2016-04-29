@@ -22,6 +22,7 @@ class PostController extends Controller
 
         return view($blogEntity->template->view)->with([
             'entity' => $blogEntity,
+            'metaTitle' => $blogEntity->name,
             'posts' => $posts,
             'archive' => [],
             'categories' => []
@@ -31,7 +32,12 @@ class PostController extends Controller
     public function post(PostRepository $repository, $blogSlug, $postSlug)
     {
         $post = $repository->whereSlug($postSlug);
+
         $repository->hydrate($post);
-        return view($post->template->view)->withEntity($post);
+
+        return view($post->template->view)->with([
+            'entity' => $post,
+            'metaTitle' => $post->name,
+        ]);
     }
 }
