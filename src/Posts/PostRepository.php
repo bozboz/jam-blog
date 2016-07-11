@@ -77,6 +77,11 @@ class PostRepository extends EntityRepository
         })->toTree();
     }
 
+    public function whereSlug($slug)
+    {
+        return Post::whereSlug($slug)->withFields()->active()->first();
+    }
+
     public function getPosts($postsType)
     {
         return Post::ofType($postsType)
