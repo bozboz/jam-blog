@@ -18,7 +18,9 @@ class PostController extends Controller
 
         $posts = $repository->getPosts($blogConfig['posts_type']);
 
-        $repository->loadCurrentListingValues($posts);
+        $posts->each(function($post) {
+            $post->injectValues();
+        });
 
         return view($blogEntity->template->view)->with([
             'entity' => $blogEntity,

@@ -45,7 +45,10 @@ class ArchiveController extends Controller
                     $query->whereNull('canonical_id');
                 }])->ordered()->active()->simplePaginate();
 
-            $repository->loadCurrentListingValues($posts);
+            $posts->each(function($post) {
+                $post->injectValues();
+            });
+
         } else {
             $posts = [];
         }

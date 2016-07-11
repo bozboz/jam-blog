@@ -17,7 +17,6 @@ class CategoryController extends Controller
 
         $categories = explode('/', $category);
         $currentCategory = Category::ofType($blogConfig['categories_type'])->whereSlug(end($categories))->first();
-        $currentCategory = $repository->loadCurrentValues($currentCategory);
 
         if ($category) {
             $parentCategory = $repository->getForPath($request->path());

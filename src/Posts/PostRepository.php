@@ -36,13 +36,13 @@ class PostRepository extends EntityRepository
             if (!property_exists($archive, $row->year)) {
                 $archive->{$row->year} = (object)[
                     'year' => $row->year,
-                    'url' => $linkBuilder->archiveLink($postsType, $row->year),
+                    'url' => $config['slug_root'] . '/' . $config['archive_slug'] . '/' . $row->year,
                     'months' => (object)[]
                 ];
             }
 
             $row->date = new Carbon("{$row->year}-{$row->month}-01");
-            $row->url = $linkBuilder->archiveLink($postsType, $row->year, str_pad($row->month, 2, '0', STR_PAD_LEFT));
+            $row->url = $archive->{$row->year}->url . '/' . str_pad($row->month, 2, '0', STR_PAD_LEFT);
             $archive->{$row->year}->months->{$row->month} = $row;
         }
 
@@ -56,11 +56,13 @@ class PostRepository extends EntityRepository
         } else {
             $query = Category::ofType($categoriesType);
         }
-        $categories = $this->loadCurrentListingValues(
-            $query->with('template')
-                ->withCanonicalPath()
-                ->active()->ordered()->get()
-        );
+        $categories = $query->with('template')
+            ->withCanonicalPath()
+            ->active()->ordered()->get();
+
+        $categories->each(function($category) {
+            $category->injectValues();
+        });
 
         $categoryIds = $categories->pluck('id')->all();
 
@@ -78,20 +80,25 @@ class PostRepository extends EntityRepository
     public function getPosts($postsType)
     {
         return Post::ofType($postsType)
-            ->with(['template', 'currentRevision'])->withCanonicalPath()
+            ->withFields()
             ->ordered()->active()->simplePaginate();
     }
 
     public function postsForCategory($postsType, $categoryId)
     {
         $descendants = Category::descendantsOf($categoryId)->pluck('id');
-        return $this->loadCurrentListingValues(
-            Post::ofType($postsType)
+
+        $posts = Post::ofType($postsType)
                 ->select('entities.*')
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
                 ->whereBelongsTo('category', $descendants->push($categoryId)->all())
-                ->simplePaginate()
-        );
+                ->simplePaginate();
+
+        $posts->each(function($post) {
+            $post->injectValues();
+        });
+
+        return $posts;
     }
 }
