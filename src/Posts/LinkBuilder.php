@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Config;
 
 class LinkBuilder extends BaseLinkBuilder
 {
-	protected function calculatePathForInstance(Entity $instance)
+	protected function calculatePathsForInstance(Entity $instance)
 	{
-		$path = parent::calculatePathForInstance($instance);
+		$path = parent::calculatePathsForInstance($instance);
 		$config = config('jam-blog.blogs')->where('posts_type', $instance->template->type_alias)->first();
-		return $config['slug_root'] . '/'.$path;
+		return collect($config['slug_root'] . '/'.$path->first());
 	}
 
 	public function categoryLink($category, $post)
