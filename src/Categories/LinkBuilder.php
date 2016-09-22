@@ -11,7 +11,7 @@ class LinkBuilder extends BaseLinkBuilder
 {
 	protected function calculatePathsForInstance(Entity $instance)
 	{
-		$path = parent::calculatePathForInstance($instance);
+		$path = parent::calculatePathsForInstance($instance);
 		$config = config('jam-blog.blogs')->where('categories_type', $instance->template->type_alias)->first();
 		return collect($config['slug_root'] . '/' . $config['categories_slug'] . '/' . $path);
 	}
