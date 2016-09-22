@@ -66,13 +66,13 @@ class PostRepository extends EntityRepository
 
         $categoryIds = $categories->pluck('id')->all();
 
-        $postCounts = Post::selectRaw('foreign_key as id, count(*) as count')
-            ->ofType('blog-posts')
+        $postCounts = Post::ofType('blog-posts')
             ->whereBelongsTo('category', $categoryIds)
+            ->selectRaw('foreign_key as category_id, count(*) as count')
             ->groupBy('foreign_key')->get();
 
         return $categories->map(function($category) use ($postCounts) {
-            $category->post_count = $postCounts->where('id', $category->id)->first()->count;
+            $category->post_count = $postCounts->where('category_id', $category->id)->first()->count;
             return $category;
         })->toTree();
     }
