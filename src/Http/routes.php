@@ -1,88 +1,54 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Admin Package Routes
-|--------------------------------------------------------------------------
-*/
+Route::group(array('middleware' => ['web'], 'namespace' => 'Bozboz\JamBlog\Http\Controllers'), function() {
 
-$blogs = $this->app['config']->get('jam-blog.blogs');
+    $config = Config::get('jam-blog');
 
-Route::group(array('middleware' => ['web'], 'namespace' => 'Bozboz\JamBlog\Http\Controllers'), function() use ($blogs) {
+    /**
+     * Archive
+     */
 
-    $blogs->map(function($blog) {
+    // // Archive Post
+    // Route::get('{blog_root}/archive/{date}/post/{post_id}{slug?}', [
+    //     'as' => 'jam-blog.archive.post',
+    //     'uses' => 'ArchiveController@post'
+    // ])->where([
+    //     'date' => '\d{4}/?(\d{2})?/?(\d{2})?',
+    //     'post_id' => '\d+',
+    //     'slug' => '/.+',
+    // ]);
 
-        /**
-         * Archive
-         */
-        if (array_key_exists('archive_enabled', $blog)) {
-
-            // Archive Post
-            Route::get('{blog_root}/'.$blog['archive_slug'].'/{date}/post/{post_id}{slug?}', [
-                'as' => 'jam-blog.archive.post',
-                'uses' => 'ArchiveController@post'
-            ])->where([
-                'blog_root' => $blog['slug_root'],
-                'date' => '\d{4}/?(\d{2})?/?(\d{2})?',
-                'post_id' => '\d+',
-                'slug' => '/.+',
-            ]);
-
-            // Archive Listing
-            Route::get('{blog_root}/'.$blog['archive_slug'].'/{date?}', [
-                'as' => 'jam-blog.archive',
-                'uses' => 'ArchiveController@listing'
-            ])->where([
-                'blog_root' => $blog['slug_root'],
-                'date' => '\d{4}/?(\d{2})?/?(\d{2})?',
-            ]);
-
-        }
+    // Archive Listing
+    Route::get('{blog_root}/' . $config['archive_slug'] . '/{date?}', [
+        'as' => 'jam-blog.archive',
+        'uses' => 'ArchiveController@show'
+    ])->where([
+        'date' => '\d{4}/?(\d{2})?/?(\d{2})?',
+    ]);
 
 
-        /**
-         * Categories
-         */
-        if (array_key_exists('categories_enabled', $blog)) {
 
-            // Category Post
-            Route::get('{blog_root}/'.$blog['categories_slug'].'/{category}/post/{post_id}{slug?}', [
-                'as' => 'jam-blog.category.post',
-                'uses' => 'PostController@post'
-            ])->where([
-                'blog_root' => $blog['slug_root'],
-                'category' => '.+/?.+?',
-                'post_id' => '\d+',
-                'slug' => '/.+',
-            ]);
+    /**
+     * Categories
+     */
 
-            // Category Listing
-            Route::get('{blog_root}/'.$blog['categories_slug'].'/{category?}', [
-                'as' => 'jam-blog.category',
-                'uses' => 'CategoryController@listing'
-            ])->where([
-                'blog_root' => $blog['slug_root'],
-                'category' => '(.+)?',
-            ]);
+    // // Category Post
+    // Route::get('{blog_root}/categories/{category}/post/{post_id}{slug?}', [
+    //     'as' => 'jam-blog.category.post',
+    //     'uses' => 'PostController@post'
+    // ])->where([
+    //     'category' => '.+/?.+?',
+    //     'post_id' => '\d+',
+    //     'slug' => '/.+',
+    // ]);
 
-        }
-
-        Route::get('{blog_root}/{postSlug}', [
-            'as' => 'post',
-            'uses' => 'PostController@post'
-        ])->where([
-            'blog_root' => $blog['slug_root'],
-            'postSlug' => '(.+)?'
-        ]);
-
-        Route::get('{blog_root}', [
-            'as' => 'post',
-            'uses' => 'PostController@listing'
-        ])->where([
-            'blog_root' => $blog['slug_root'],
-        ]);
-
-    });
+    // Category show
+    Route::get('{blog_root}/' . $config['categories_slug'] . '/{category?}', [
+        'as' => 'jam-blog.category',
+        'uses' => 'CategoryController@show'
+    ])->where([
+        'category' => '(.+)?',
+    ]);
 
 
 });

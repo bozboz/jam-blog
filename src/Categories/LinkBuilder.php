@@ -3,16 +3,18 @@
 namespace Bozboz\JamBlog\Categories;
 
 use Bozboz\Jam\Entities\Entity;
-use Bozboz\Jam\Entities\EntityPath;
-use Bozboz\Jam\Entities\LinkBuilder as BaseLinkBuilder;
+use Bozboz\Jam\Entities\LinkBuilder as Base;
 use Illuminate\Support\Facades\Config;
 
-class LinkBuilder extends BaseLinkBuilder
+class LinkBuilder extends Base
 {
 	protected function calculatePathsForInstance(Entity $instance)
 	{
-		$path = parent::calculatePathsForInstance($instance);
-		$config = config('jam-blog.blogs')->where('categories_type', $instance->template->type_alias)->first();
-		return collect($config['slug_root'] . '/' . $config['categories_slug'] . '/' . $path->first());
+        $path = $instance->getAncestors()->pluck('slug');
+        $path->splice(1, 0, Config::get('jam-blog.categories_slug'));
+        $path->push($instance->slug);
+        return collect(
+            str_pad(trim($path->implode('/'), '/'), 1, '/')
+        );
 	}
 }

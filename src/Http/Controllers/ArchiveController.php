@@ -6,15 +6,25 @@ use Bozboz\JamBlog\Posts\Post;
 use Bozboz\JamBlog\Posts\PostRepository;
 use Carbon\Carbon;
 use Illuminate\Routing\Controller;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ArchiveController extends Controller
 {
-    public function listing(PostRepository $repository, $blogSlug, $dateString = null)
+    public function show(PostRepository $repo, $blogSlug, $dateString = null)
     {
-        $blogEntity = $repository->getForPath($blogSlug);
-        $repository->hydrate($blogEntity);
+        $blogEntity = $repo->getForPath($blogSlug);
 
-        $blogConfig = config('jam-blog.blogs')->where('slug_root', $blogSlug)->first();
+        if ( ! $blogEntity) {
+            throw new NotFoundHttpException;
+        }
+
+        $repo->hydrate($blogEntity);
+
+        $blogConfig = $repo->getBlog($blogEntity);
+
+        if ( ! $blogConfig) {
+            throw new NotFoundHttpException;
+        }
 
         if ($dateString) {
             $dateLength = count(explode('/', $dateString));
@@ -38,28 +48,28 @@ class ArchiveController extends Controller
                 break;
             }
 
-            $posts = Post::ofType($blogConfig['posts_type'])
+            $posts = Post::ofType($blogConfig->post_type)
                 ->whereHas('currentRevision', function($query) use ($startDate, $endDate) {
                     $query->whereBetween('published_at', [$startDate, $endDate]);
-                })->with(['template', 'currentRevision', 'paths' => function($query) {
-                    $query->whereNull('canonical_id');
-                }])->ordered()->active()->simplePaginate();
+                })
+                ->with('template', 'currentRevision')->withCanonicalPath()
+                ->ordered()->active()->simplePaginate();
 
             $posts->each(function($post) {
                 $post->injectValues();
             });
 
         } else {
-            $posts = [];
+            $posts = Post::ofType($blogConfig->post_type)
+                ->with('template', 'currentRevision')->withCanonicalPath()
+                ->ordered()->active()->simplePaginate();
         }
 
-        $blogEntity->canonical_path = \Request::path();
-
-        return view($blogEntity->template->view)->with([
+        return view('jam-blog::archive')->with([
+            'layout' => $blogEntity->template->listing_view,
             'entity' => $blogEntity,
             'posts' => $posts,
-            'archive' => $repository->getArchive($blogConfig['posts_type']),
-            'categories' => $repository->getCategories($blogConfig['categories_type'])
+            'archive' => $repo->getArchive($blogEntity->canonical_path, $blogConfig->post_type),
         ]);
     }
 }

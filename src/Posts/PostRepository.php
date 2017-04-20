@@ -6,11 +6,12 @@ use Bozboz\JamBlog\Categories\Category;
 use Bozboz\JamBlog\Posts\Post;
 use Bozboz\Jam\Repositories\EntityRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PostRepository extends EntityRepository
 {
-    public function getArchive($postsType)
+    public function getArchive($slugRoot, $postsType)
     {
         $results = DB::table('entities')->selectRaw("
                 COUNT(entities.id) as post_count,
@@ -27,16 +28,13 @@ class PostRepository extends EntityRepository
             ->get();
 
         $type = app('EntityMapper')->get($postsType);
-        $linkBuilder = $type->getLinkBuilder();
-
-        $config = config('jam-blog.blogs')->where('posts_type', $postsType)->first();
 
         $archive = (object)[];
         foreach ($results as $row) {
             if (!property_exists($archive, $row->year)) {
                 $archive->{$row->year} = (object)[
                     'year' => $row->year,
-                    'url' => $config['slug_root'] . '/' . $config['archive_slug'] . '/' . $row->year,
+                    'url' => $slugRoot . '/' . Config::get('jam-blog.archive_slug') . '/' . $row->year,
                     'months' => (object)[]
                 ];
             }
@@ -49,7 +47,7 @@ class PostRepository extends EntityRepository
         return $archive;
     }
 
-    public function getCategories($categoriesType, $parentCategory = null)
+    public function getCategories($postsType, $categoriesType, $parentCategory = null)
     {
         if ($parentCategory) {
             $query = $parentCategory->descendants();
@@ -66,13 +64,14 @@ class PostRepository extends EntityRepository
 
         $categoryIds = $categories->pluck('id')->all();
 
-        $postCounts = Post::ofType('blog-posts')
+        $postCounts = Post::ofType($postsType)
             ->whereBelongsTo('category', $categoryIds)
             ->selectRaw('foreign_key as category_id, count(*) as count')
             ->groupBy('foreign_key')->get();
 
         return $categories->map(function($category) use ($postCounts) {
-            $category->post_count = $postCounts->where('category_id', $category->id)->first()->count;
+            $categoryStats = $postCounts->where('category_id', $category->id)->first();
+            $category->post_count = $categoryStats ? $categoryStats->count : 0;
             return $category;
         })->toTree();
     }
@@ -89,21 +88,30 @@ class PostRepository extends EntityRepository
             ->ordered()->active()->simplePaginate();
     }
 
-    public function postsForCategory($postsType, $categoryId)
+    public function postsForCategory($postsType, $category)
     {
-        $descendants = Category::descendantsOf($categoryId)->pluck('id');
+        $categories = $this->forType($category->template->type_alias)->descendantsOf($category->id)->pluck('id')->push($category->id);
 
         $posts = Post::ofType($postsType)
                 ->select('entities.*')
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
-                ->whereBelongsTo('category', $descendants->push($categoryId)->all())
+                ->whereBelongsTo('category', $categories->all())
                 ->simplePaginate();
 
-        $posts->each(function($post) {
-            $post->injectValues();
-        });
-
         return $posts;
+    }
+
+    public function getBlog($entity)
+    {
+        $blog = $entity->currentValues->filter(function($value) {
+            return $value->type_alias === 'blog';
+        })->first();
+
+        if ( ! $blog) {
+            return false;
+        }
+
+        return (object)$blog->getOptions();
     }
 }

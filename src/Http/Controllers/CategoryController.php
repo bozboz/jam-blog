@@ -8,34 +8,54 @@ use Bozboz\JamBlog\Posts\PostRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CategoryController extends Controller
 {
-    public function listing(PostRepository $repository, Request $request, $blogSlug, $category = null)
+    public function show(PostRepository $repo, Request $request, $blogSlug, $category = null)
     {
-        $blogConfig = config('jam-blog.blogs')->where('slug_root', $blogSlug)->first();
+        $blogEntity = $repo->getForPath($blogSlug);
 
-        $categories = explode('/', $category);
-        $currentCategory = Category::ofType($blogConfig['categories_type'])->whereSlug(end($categories))->first();
-
-        if ($category) {
-            $parentCategory = $repository->getForPath($request->path());
-
-            $categories = $repository->getCategories($blogConfig['categories_type'], $parentCategory);
-            $posts = $repository->postsForCategory($blogConfig['posts_type'], $parentCategory->id);
-
-            $entity = $parentCategory;
-        } else {
-            $categories = $repository->getCategories($blogConfig['categories_type']);
-            $posts = [];
-
-            $entity = $repository->getForPath($blogSlug);
+        if ( ! $blogEntity) {
+            throw new NotFoundHttpException;
         }
 
-        return view($entity->template->view)->with([
-            'entity' => $repository->hydrate($entity),
+        $repo->hydrate($blogEntity);
+
+        $blogConfig = $repo->getBlog($blogEntity);
+
+        if ( ! $blogConfig || ! property_exists($blogConfig, 'category_type')) {
+            throw new NotFoundHttpException;
+        }
+
+        $categories = explode('/', $category);
+        $currentCategory = Category::ofType($blogConfig->category_type)->whereSlug(end($categories))->first();
+
+        if ($category) {
+            $categoryEntity = $repo->getForPath($request->path());
+
+            if ( ! $categoryEntity) {
+                throw new NotFoundHttpException;
+            }
+
+            $repo->hydrate($categoryEntity);
+
+            $categories = $repo->getCategories($blogConfig->post_type, $blogConfig->category_type, $categoryEntity);
+            $posts = $repo->postsForCategory($blogConfig->post_type, $categoryEntity);
+
+            $entity = $categoryEntity;
+        } else {
+            $categories = $repo->getCategories($blogConfig->post_type, $blogConfig->category_type);
+            $posts = $repo->forType($blogConfig->post_type)->simplePaginate();
+
+            $entity = $blogEntity;
+        }
+
+        return view('jam-blog::categories')->with([
+            'layout' => $entity->template->listing_view ?: $entity->template->view,
+            'entity' => $entity,
             'posts' => $posts,
-            'categories' => $categories
+            'categories' => $categories,
         ]);
     }
 }
