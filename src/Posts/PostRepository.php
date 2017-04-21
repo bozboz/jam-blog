@@ -64,10 +64,17 @@ class PostRepository extends EntityRepository
 
         $categoryIds = $categories->pluck('id')->all();
 
-        $postCounts = Post::ofType($postsType)
-            ->whereBelongsTo('category', $categoryIds)
-            ->selectRaw('foreign_key as category_id, count(*) as count')
-            ->groupBy('foreign_key')->get();
+        $relationMethod = Config::get('jam-blog.category_relation_method');
+        $relation = Config::get('jam-blog.category_relation_field_name');
+
+        if ($relationMethod === 'whereBelongsTo') {
+            $postCounts = Post::ofType($postsType)
+                ->{$relationMethod}($relation, $categoryIds)
+                ->selectRaw('foreign_key as category_id, count(*) as count')
+                ->groupBy('value')->get();
+        } else {
+            $postCounts = collect();
+        }
 
         return $categories->map(function($category) use ($postCounts) {
             $categoryStats = $postCounts->where('category_id', $category->id)->first();
@@ -92,11 +99,14 @@ class PostRepository extends EntityRepository
     {
         $categories = $this->forType($category->template->type_alias)->descendantsOf($category->id)->pluck('id')->push($category->id);
 
+        $relationMethod = Config::get('jam-blog.category_relation_method');
+        $relation = Config::get('jam-blog.category_relation_field_name');
+
         $posts = Post::ofType($postsType)
                 ->select('entities.*')
                 ->withCanonicalPath()
                 ->with('template', 'currentRevision')
-                ->whereBelongsTo('category', $categories->all())
+                ->{$relationMethod}($relation, $categories->all())
                 ->simplePaginate();
 
         return $posts;

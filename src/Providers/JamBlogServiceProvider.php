@@ -21,9 +21,9 @@ class JamBlogServiceProvider extends JamServiceProvider
 
     public function boot()
     {
-        $this->publishes([
-            __DIR__ . '/../../config/jam-blog.php' => config_path('jam-blog.php'),
-        ]);
+        // $this->publishes([
+        //     __DIR__ . '/../../config/jam-blog.php' => config_path('jam-blog.php'),
+        // ]);
         $this->mergeConfigFrom(
             __DIR__ . '/../../config/jam-blog.php', 'jam-blog'
         );
