@@ -12,6 +12,6 @@
         }
     },
     "require": {
-        "bozboz/jam": "dev-master"
+        "bozboz/jam": "^1"
     }
 }
