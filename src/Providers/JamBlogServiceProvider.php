@@ -2,18 +2,10 @@
 
 namespace Bozboz\JamBlog\Providers;
 
-use Bozboz\JamBlog\Categories\Category;
-use Bozboz\JamBlog\Posts\Post;
-use Bozboz\Jam\Fields\Field;
 use Bozboz\Jam\Fields\FieldMapper;
-use Bozboz\Jam\Providers\JamServiceProvider;
-use Bozboz\Jam\Types\Type;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\ServiceProvider;
 
-
-class JamBlogServiceProvider extends JamServiceProvider
+class JamBlogServiceProvider extends ServiceProvider
 {
     public function register()
     {
@@ -21,9 +13,6 @@ class JamBlogServiceProvider extends JamServiceProvider
 
     public function boot()
     {
-        // $this->publishes([
-        //     __DIR__ . '/../../config/jam-blog.php' => config_path('jam-blog.php'),
-        // ]);
         $this->mergeConfigFrom(
             __DIR__ . '/../../config/jam-blog.php', 'jam-blog'
         );
