@@ -4,7 +4,7 @@
 ## 1. Installation
 
 1. Require the package in Composer, by running `composer require bozboz/jam-blog`
-2. Add `Bozboz\Jam\Providers\JamBlogServiceProvider::class` to the providers array config/app.php
+2. Add `Bozboz\JamBlog\Providers\JamBlogServiceProvider::class,` to the providers array config/app.php
 
 
 ## 2. Setup
